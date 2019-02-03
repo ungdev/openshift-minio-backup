@@ -1,7 +1,7 @@
 #!/bin/sh
 
 DATE=$(date +%Y-%m-%d_%H-%M-%S)
-DIR=$PWD
+DIR=$(PWD)
 
 #BACKUP_HOST=""
 #BUCKET=""
@@ -44,43 +44,35 @@ putBackup ()
 #  cd ..
 #done
 
-
-
-### Databases ###
-for i in $(oc get projects --no-headers |grep Active |awk '{print $1}')
+for i in mysql postgresql mongodb
 do
-  oc observe -n $i --once pods \
-    -a '{ .metadata.labels.deploymentconfig }'   \
-    -a '{ .metadata.labels.backup     }' \
-    -a '{ .metadata.labels.backupvolumemount     }'   -- echo \
-   |grep -v ^# \
-   |while read PROJECT POD DC BACKUP BACKUPVOLUMEMOUNT
+	oc get dc -l backup=$i --all-namespaces -o jsonpath='{range .items[?(@.status.availableReplicas > 0)]}{.metadata.name}{" "}{.metadata.namespace}{"\n"}{end}' \
+  |while read DC_NAME PROJECT
   do
-    [ "$BACKUP" == "" ] && continue
-    echo "$POD in $PROJECT has the following BACKUP label: $BACKUP"
-    mkdir -p $DIR/$PROJECT  2>/dev/null
+    POD=$(oc get pods -n $PROJECT -l deploymentconfig=$DC_NAME  -o jsonpath='{range .items[?(@.status.phase == "Running")]}{.metadata.name}{end}' | head -n 1)
+    echo "$PROJECT $DC_NAME $POD"
     DBNAME=""
-    case $BACKUP in
+    case $i in
       mysql)
         DBNAME=$(oc -n $PROJECT exec $POD -- /usr/bin/sh -c 'echo $MYSQL_DATABASE')
         echo "Backup database $DBNAME..."
-        oc -n $PROJECT exec $POD -- /bin/bash -c 'mysqldump -h 127.0.0.1 -u $MYSQL_USER --password=$MYSQL_PASSWORD $MYSQL_DATABASE' | gzip > $DIR/$PROJECT/$DBNAME-$DATE.sql.gz
-        putBackup $DIR/$PROJECT/$DBNAME-$DATE.sql.gz
+        oc -n $PROJECT exec $POD -- /bin/bash -c 'mysqldump -h 127.0.0.1 -u $MYSQL_USER --password=$MYSQL_PASSWORD $MYSQL_DATABASE' | gzip > $DIR/$PROJECT-$DBNAME-$DATE.sql.gz
+        #putBackup $DIR/$PROJECT-$DBNAME-$DATE.sql.gz
         ;;
       postgresql)
         DBNAME=$(oc -n $PROJECT exec $POD -- /usr/bin/sh -c 'echo $POSTGRESQL_DATABASE')
         echo "Backup database $DBNAME..."
-        oc -n $PROJECT exec $POD -- /bin/bash -c 'pg_dump -Fc $POSTGRESQL_DATABASE ' | gzip > $DIR/$PROJECT/$DBNAME-$DATE.pg_dump_custom.gz
-        putBackup $DIR/$PROJECT/$DBNAME-$DATE.pg_dump_custom.gz
+        oc -n $PROJECT exec $POD -- /bin/bash -c 'pg_dump -Fc $POSTGRESQL_DATABASE ' | gzip > $DIR/$PROJECT-$DBNAME-$DATE.pg.gz
+        #putBackup $DIR/$PROJECT-$DBNAME-$DATE.pg.gz
         ;;
       mongodb)
         DBNAME=$(oc -n $PROJECT exec $POD -- /usr/bin/sh -c 'echo $MONGODB_DATABASE')
         echo "Backup database $DBNAME..."
-        oc -n $PROJECT exec $POD -- /bin/bash -c 'mongodump -u $MONGODB_USER -p $MONGODB_PASSWORD -d $MONGODB_DATABASE --gzip --archive' > $DIR/$PROJECT/$DBNAME-$DATE.mongodump.gz
-        putBackup $DIR/$PROJECT/$DBNAME-$DATE.mongodump.gz
+        oc -n $PROJECT exec $POD -- /bin/bash -c 'mongodump -u $MONGODB_USER -p $MONGODB_PASSWORD -d $MONGODB_DATABASE --gzip --archive' > $DIR/$PROJECT-$DBNAME-$DATE.mongodump.gz
+        #putBackup $DIR/$PROJECT-$DBNAME-$DATE.mongodump.gz
         ;;
       *)
-        echo "ERROR: Unknown backup-method $BACKUP"
+        echo "ERROR: Unknown backup-method $i"
         ;;
     esac
   done
