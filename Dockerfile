@@ -16,4 +16,4 @@ RUN tar --strip-components=1 -xzvf  /opt/oc/release.tar.gz -C /opt/oc/ && \
 WORKDIR /app
 ADD . /app/  
 
-CMD bash backup-databases.sh
+CMD sh backup-databases.sh
