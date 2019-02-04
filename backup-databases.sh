@@ -1,7 +1,7 @@
 #!/bin/sh
 
 DATE=$(date +%Y-%m-%d_%H-%M-%S)
-DIR=$(PWD)
+DIR=$PWD
 
 #BACKUP_HOST=""
 #BUCKET=""
