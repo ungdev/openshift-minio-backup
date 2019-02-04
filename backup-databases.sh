@@ -1,7 +1,7 @@
 #!/bin/sh
 
 DATE=$(date +%Y-%m-%d_%H-%M-%S)
-DIR=$PWD
+DIR="/tmp/backup"
 
 #BACKUP_HOST=""
 #BUCKET=""
@@ -43,7 +43,7 @@ putBackup ()
 #  done
 #  cd ..
 #done
-
+mkdir $DIR
 for i in mysql postgresql mongodb
 do
 	oc get dc -l backup=$i --all-namespaces -o jsonpath='{range .items[?(@.status.availableReplicas > 0)]}{.metadata.name}{" "}{.metadata.namespace}{"\n"}{end}' \
