@@ -1,0 +1,26 @@
+apiVersion: batch/v1beta1
+kind: CronJob
+metadata:
+  name: database_backup
+spec:
+  schedule: "0 * * * *"  
+  jobTemplate:             
+    spec:
+      backoffLimit: 3
+      template:
+        metadata:
+          labels:          
+            parent: "cronjon_database_backup"
+        spec:
+          containers:
+          - name: database_backup
+            image: docker.io/cdautume/openshift-minio-backup:latest
+            - env:
+              - name: BACKUP_HOST
+                value: 'XxXXXXXxx'
+              - name: BUCKET
+                value: openshift
+            imagePullPolicy: Always
+          restartPolicy: Never
+          serviceAccount: openshift-minio-backup-2
+          serviceAccountName: openshift-minio-backup-2
