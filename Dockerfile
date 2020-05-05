@@ -1,6 +1,4 @@
-FROM frolvlad/alpine-glibc:latest
-
-MAINTAINER "Christian d'Autume" <christian@dautume.fr>
+FROM alpine:3
 
 ENV OC_VERSION "v3.10.0"
 ENV OC_RELEASE "openshift-origin-client-tools-v3.10.0-dd10d17-linux-64bit"
