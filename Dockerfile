@@ -1,7 +1,7 @@
-FROM alpine:3
+FROM frolvlad/alpine-glibc:latest
 
-ENV OC_VERSION "v3.10.0"
-ENV OC_RELEASE "openshift-origin-client-tools-v3.10.0-dd10d17-linux-64bit"
+ENV OC_VERSION "v3.11.0"
+ENV OC_RELEASE "openshift-origin-client-tools-v3.11.0-0cbc58b-linux-64bit"
 
 RUN apk add --no-cache bash gawk sed grep bc coreutils curl grep gzip
 # install the oc client tools
